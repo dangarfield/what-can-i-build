@@ -1,0 +1,26 @@
+{
+  "name": "what-can-i-build-prepare",
+  "version": "1.0.0",
+  "description": "",
+  "main": "prepare-data.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon prepare-data.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "got": "^12.5.2"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "data",
+      "client-src",
+      "_static",
+      "_docs"
+    ]
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
