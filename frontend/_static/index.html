@@ -13,15 +13,18 @@
         integrity="sha512-5PV92qsds/16vyYIJo3T/As4m2d8b6oWYfoqV+vtizRB6KhF1F9kYzWzQmsO6T3z3QG2Xdhrx7FQ+5R1LiQdUA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        .user-inventory-select-results .result:hover {
+        .user-inventory .item:hover,
+        .user-inventory-select-results .item:hover {
             cursor: pointer;
         }
 
-        .user-inventory-select-results .result {
+        .user-inventory .item,
+        .user-inventory-select-results .item {
             position: relative;
         }
 
-        .user-inventory-select-results .result .result-add {
+        .user-inventory .item .item-add,
+        .user-inventory-select-results .item .item-add {
             opacity: 0;
             position: absolute;
             top: 50%;
@@ -31,12 +34,15 @@
             text-align: center;
         }
 
-        .user-inventory-select-results .result:hover img,
-        .user-inventory-select-results .result:hover p {
+        .user-inventory .item:hover img,
+        .user-inventory .item:hover p,
+        .user-inventory-select-results .item:hover img,
+        .user-inventory-select-results .item:hover p {
             opacity: 0.3;
         }
 
-        .user-inventory-select-results .result:hover .result-add {
+        .user-inventory .item:hover .item-add,
+        .user-inventory-select-results .item:hover .item-add {
             opacity: 1;
         }
     </style>
@@ -63,6 +69,17 @@
             <div class="col-6">
                 <h4>Your sets</h4>
                 <div class="your-sets"></div>
+                <div class="row user-inventory mt-2"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary create-list disabled" type="button">What can I build with my <span
+                            class="user-inventory-count"></span>
+                        sets</button>
+                </div>
             </div>
         </div>
     </div>
