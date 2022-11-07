@@ -18,6 +18,5 @@
     "backend"
   ],
   "dependencies": {
-    "minisearch": "^5.0.0"
   }
 }

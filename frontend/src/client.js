@@ -1,9 +1,12 @@
+import Modal from 'bootstrap/js/dist/modal.js'
 import MiniSearch from 'minisearch'
 
 const DATA = {
-  userSets: []
+  userSets: [],
+  userParts: new Map()
 }
 const setSearch = new MiniSearch({ idField: 'id', fields: ['id', 'name'], storeFields: ['id', 'name'] })
+const modal = new Modal(document.querySelector('.modal'), {})
 
 const setStatus = (status) => {
   document.querySelector('.status').textContent = status
@@ -39,33 +42,137 @@ const fetchData = async () => {
       const partDetails = p.split(',')
       return { partId: partDetails[0], quantity: parseInt(partDetails[1]), color: partDetails[2], isSpare: partDetails[3] === 't' }
     })
-    return { id: setDetails[0], name: setDetails[1], partsUsed: parseInt(setDetails[2]), partsTotal: parseInt(setDetails[3]), parts: partsObj }
+    const partsMap = new Map(partsObj.filter(p => !p.isSpare).map(p => [p.partId, p.quantity]))
+
+    return {
+      id: setDetails[0],
+      name: setDetails[1],
+      partsUsed: parseInt(setDetails[2]),
+      partsTotal: parseInt(setDetails[3]),
+      parts: partsObj,
+      partsMap
+    }
   })
   console.log('rawSetData', DATA.sets)
 
   setStatus('Data loaded')
   console.log('Data processed', DATA)
 }
-const createList = () => {
-  console.log('createList', DATA.userSets)
-  // disableCreateListButton()
+const setUserParts = () => {
   const userSets = DATA.userSets.map(i => {
     const set = DATA.sets.find(s => s.id === i)
     return set
   })
   console.log('userSets', userSets)
 
-  setStatus('Creating list')
-  // Can speed up the process by allowing user to select their 'theme'
-  // const allSets = DATA.sets.filter(s => s.theme_id === '1')
-  // for (const set of allSets) {
-  //   set.inventory = DATA.inventories.find(i => i.set_num === set.set_num)
-  //   set.parts = DATA.inventory_parts.filter(p => p.inventory_id === set.inventory.id)
-  // }
-  // setStatus('Data loaded')
-  // console.log('Data processed', allSets)
+  DATA.userParts = new Map()
+  for (const set of userSets) {
+    for (const part of set.parts) {
+      const existingPart = DATA.userParts.get(part.partId)
+      if (existingPart) {
+        DATA.userParts.set(part.partId, existingPart + part.quantity)
+      } else {
+        DATA.userParts.set(part.partId, part.quantity)
+      }
+    }
+  }
+}
+const clearResultsList = () => {
+  document.querySelector('.results-list').innerHTML = ''
+}
+const listResultClickHandler = (e) => {
+  const result = parseInt(e.target.closest('tr').getAttribute('data-result'))
+  console.log('result', result)
+  // modal.show()
+}
+const createList = () => {
+  console.log('createList', DATA.userSets)
+  setStatus('Preparing user parts')
 
-  // console.log('allSets', allSets)
+  disableCreateListButton()
+  clearResultsList()
+  setUserParts()
+
+  console.log('userParts', DATA.userParts)
+
+  setStatus('Creating list')
+  let results = []
+  for (let i = 0; i < DATA.sets.length; i++) {
+    const set = DATA.sets[i]
+    let got = 0
+    let notEnough = 0
+    const notEnoughParts = []
+    let not = 0
+    const notParts = []
+
+    for (const [partId, quantity] of set.partsMap) {
+      const userPart = DATA.userParts.get(partId)
+      if (userPart === undefined) {
+        not += quantity
+        notParts.push({ partId, quantity })
+      } else if (userPart < quantity) {
+        notEnough += quantity
+        notEnoughParts.push({ partId, quantity })
+      } else {
+        got += quantity
+      }
+    }
+    console.log('createList', i + 1, 'of', DATA.sets.length, 'got:', got, 'notEnough:', notEnough, 'not:', not, set)
+    if (not <= 20 && set.partsUsed >= 30) {
+      let resultClass = ''
+      if (notEnough === 0 && not === 0) {
+        resultClass = 'table-success'
+      }
+      results.push({
+        id: set.id,
+        name: set.name,
+        partsUsed: set.partsUsed,
+        got,
+        notEnough,
+        notEnoughParts,
+        not,
+        notParts,
+        resultClass
+      })
+    }
+  }
+  results = results.sort((a, b) => a.not - b.not)
+  console.log('results', results)
+
+  const tableRowsHtml = results.map((r, i) => `
+    <tr class="${r.resultClass}" data-result="${i}">
+      <th scope="row">${r.id}</th>
+      <td>${r.name}</td>
+      <td><img class="img-fluid" src="https://cdn.rebrickable.com/media/sets/${r.id.toLowerCase()}.jpg" /></td>
+      <td>${r.got}</td>
+      <td>${r.notEnough}</td>
+      <td>${r.not}</td>
+    </tr>
+  `).join('')
+  const tableHtml = `<table class="table table-striped table-hover">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Name</th>
+      <th scope="col">Image</th>
+      <th scope="col">Got</th>
+      <th scope="col">Not enough</th>
+      <th scope="col">Not</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${tableRowsHtml}
+  </tbody>`
+
+  document.querySelectorAll('.results-list tr').forEach((result) => {
+    result.removeEventListener('click', listResultClickHandler)
+  })
+
+  document.querySelector('.results-list').innerHTML = tableHtml
+
+  document.querySelectorAll('.results-list tr').forEach((result) => {
+    result.addEventListener('click', listResultClickHandler)
+  })
 }
 const bindCreateListButton = () => {
   document.querySelector('.create-list').addEventListener('click', createList)
@@ -82,6 +189,7 @@ const removeSet = (id) => {
   DATA.userSets = DATA.userSets.filter(s => s !== id)
   refreshUserSets()
   saveUserSets()
+  clearResultsList()
 }
 
 const removeSetClickHandler = (e) => {
@@ -131,6 +239,7 @@ const addSet = (id) => {
     DATA.userSets.push(id)
     refreshUserSets()
     saveUserSets()
+    clearResultsList()
   }
 }
 

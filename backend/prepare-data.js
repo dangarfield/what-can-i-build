@@ -105,6 +105,7 @@ const process = async () => {
       mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare}\n`
     }
   }
+  mainDataFile = mainDataFile.slice(0, -1)
   fs.writeFileSync(processSetsPath, mainDataFile)
   fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(mainDataFile, 'utf-8')))
   console.log('Done', mainDataFile.length)

@@ -11,6 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bootstrap": "^5.2.2",
+    "minisearch": "^5.0.0",
+    "popper": "^1.0.1"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^23.0.2",
