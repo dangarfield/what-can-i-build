@@ -40,7 +40,7 @@ const fetchData = async () => {
     const setDetails = parts.shift().split(',')
     const partsObj = parts.map(p => {
       const partDetails = p.split(',')
-      return { partId: partDetails[0], quantity: parseInt(partDetails[1]), color: partDetails[2], isSpare: partDetails[3] === 't' }
+      return { partId: partDetails[0], quantity: parseInt(partDetails[1]), color: partDetails[2], isSpare: partDetails[3] === 't', imgUrl: partDetails[4] }
     })
     const partsMap = new Map(partsObj.filter(p => !p.isSpare).map(p => [p.partId, p.quantity]))
 
@@ -80,10 +80,35 @@ const setUserParts = () => {
 const clearResultsList = () => {
   document.querySelector('.results-list').innerHTML = ''
 }
+const createPartHtml = (p) => {
+  console.log('createPartHtml', p)
+  return `
+  <div class="col-md-1 col-4 item" data-set-id="${p.partId}">
+    <img class="img-fluid" src="https://cdn.rebrickable.com/media/parts/${p.imgUrl}"> 
+    <p>${p.partId}</br> Need x${p.quantity}${p.have ? `<br/>Have x${p.have}` : ''}</p>
+  </div>
+  `
+}
+
 const listResultClickHandler = (e) => {
-  const result = parseInt(e.target.closest('tr').getAttribute('data-result'))
-  console.log('result', result)
-  // modal.show()
+  const r = DATA.results[parseInt(e.target.closest('tr').getAttribute('data-result'))]
+  console.log('result', r)
+  const modalEle = document.querySelector('.modal')
+  modalEle.querySelector('.modal-title').innerHTML = `${r.name} (${r.id})`
+
+  const modalBodyHtml = `
+  <h4>Got ${r.got} parts</h4>
+  <h4>Not got ${r.not} parts</h4>
+  <div class="row">
+    ${r.notParts.map(p => createPartHtml(p)).join('')}
+  </div>
+  <h4>Not enough of ${r.notEnough} parts</h4>
+  <div class="row">
+    ${r.notEnoughParts.map(p => createPartHtml(p)).join('')}
+  </div>
+  `
+  modalEle.querySelector('.modal-body').innerHTML = modalBodyHtml
+  modal.show()
 }
 const createList = () => {
   console.log('createList', DATA.userSets)
@@ -109,10 +134,10 @@ const createList = () => {
       const userPart = DATA.userParts.get(partId)
       if (userPart === undefined) {
         not += quantity
-        notParts.push({ partId, quantity })
+        notParts.push({ partId, quantity, imgUrl: set.parts.find(p => p.partId === partId).imgUrl })
       } else if (userPart < quantity) {
         notEnough += quantity
-        notEnoughParts.push({ partId, quantity })
+        notEnoughParts.push({ partId, quantity, have: userPart, imgUrl: set.parts.find(p => p.partId === partId).imgUrl })
       } else {
         got += quantity
       }
@@ -137,6 +162,7 @@ const createList = () => {
     }
   }
   results = results.sort((a, b) => a.not - b.not)
+  DATA.results = results
   console.log('results', results)
 
   const tableRowsHtml = results.map((r, i) => `
@@ -173,6 +199,7 @@ const createList = () => {
   document.querySelectorAll('.results-list tr').forEach((result) => {
     result.addEventListener('click', listResultClickHandler)
   })
+  setStatus('List created')
 }
 const bindCreateListButton = () => {
   document.querySelector('.create-list').addEventListener('click', createList)

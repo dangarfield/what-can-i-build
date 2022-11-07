@@ -87,7 +87,7 @@ const process = async () => {
   for (const file of files) {
     DATA[file] = JSON.parse(fs.readFileSync(path.join(RAW_DATA_PATH, `${file}.json`), 'utf-8'))
   }
-  DATA.sets = DATA.sets.filter(s => s.theme_id === '1')// .slice(0, 1)
+  // DATA.sets = DATA.sets.filter(s => s.theme_id === '1')// .slice(0, 1)
   // DATA.sets = DATA.sets.slice(19890)
   let mainDataFile = ''
   for (let i = 0; i < DATA.sets.length; i++) {
@@ -102,7 +102,7 @@ const process = async () => {
     mainDataFile += `s,${set.set_num},${set.name},${set.num_parts},${set.parts_total}\n`
     for (const part of set.parts) {
       part.color = DATA.colors.find(c => c.id === part.color_id).name
-      mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare}\n`
+      mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare},${part.img_url.replace('https://cdn.rebrickable.com/media/parts/', '')}\n`
     }
   }
   mainDataFile = mainDataFile.slice(0, -1)
