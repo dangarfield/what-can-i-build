@@ -50,20 +50,21 @@ const fetchData = async () => {
       partsUsed: parseInt(setDetails[2]),
       partsTotal: parseInt(setDetails[3]),
       parts: partsObj,
-      partsMap
+      partsMap,
+      theme: setDetails[4]
     }
   })
-  console.log('rawSetData', DATA.sets)
+  // console.log('rawSetData', DATA.sets)
 
   setStatus('Data loaded')
-  console.log('Data processed', DATA)
+  // console.log('Data processed', DATA)
 }
 const setUserParts = () => {
   const userSets = DATA.userSets.map(i => {
     const set = DATA.sets.find(s => s.id === i)
     return set
   })
-  console.log('userSets', userSets)
+  // console.log('userSets', userSets)
 
   DATA.userParts = new Map()
   for (const set of userSets) {
@@ -81,7 +82,7 @@ const clearResultsList = () => {
   document.querySelector('.results-list').innerHTML = ''
 }
 const createPartHtml = (p) => {
-  console.log('createPartHtml', p)
+  // console.log('createPartHtml', p)
   return `
   <div class="col-md-1 col-4 item" data-set-id="${p.partId}">
     <img class="img-fluid" src="https://cdn.rebrickable.com/media/parts/${p.imgUrl}"> 
@@ -92,7 +93,7 @@ const createPartHtml = (p) => {
 
 const listResultClickHandler = (e) => {
   const r = DATA.results[parseInt(e.target.closest('tr').getAttribute('data-result'))]
-  console.log('result', r)
+  // console.log('result', r)
   const modalEle = document.querySelector('.modal')
   modalEle.querySelector('.modal-title').innerHTML = `${r.name} (${r.id})`
 
@@ -111,19 +112,23 @@ const listResultClickHandler = (e) => {
   modal.show()
 }
 const createList = () => {
-  console.log('createList', DATA.userSets)
+  // console.log('createList', DATA.userSets)
   setStatus('Preparing user parts')
 
   disableCreateListButton()
   clearResultsList()
   setUserParts()
 
-  console.log('userParts', DATA.userParts)
+  // console.log('userParts', DATA.userParts)
 
   setStatus('Creating list')
   let results = []
   for (let i = 0; i < DATA.sets.length; i++) {
     const set = DATA.sets[i]
+    if (['Service', 'Bulk', 'Set', 'Mindstorms', 'Supplemental'].some(s => set.theme.includes(s))) {
+      continue
+    }
+
     let got = 0
     let notEnough = 0
     const notEnoughParts = []
@@ -142,8 +147,9 @@ const createList = () => {
         got += quantity
       }
     }
-    console.log('createList', i + 1, 'of', DATA.sets.length, 'got:', got, 'notEnough:', notEnough, 'not:', not, set)
-    if (not <= 20 && set.partsUsed >= 30) {
+    // console.log('createList', i + 1, 'of', DATA.sets.length, 'got:', got, 'notEnough:', notEnough, 'not:', not, set)
+
+    if (not <= 20 && set.partsUsed >= 30 && got > 50) {
       let resultClass = ''
       if (notEnough === 0 && not === 0) {
         resultClass = 'table-success'
@@ -151,6 +157,7 @@ const createList = () => {
       results.push({
         id: set.id,
         name: set.name,
+        theme: set.theme,
         partsUsed: set.partsUsed,
         got,
         notEnough,
@@ -163,12 +170,12 @@ const createList = () => {
   }
   results = results.sort((a, b) => a.not - b.not)
   DATA.results = results
-  console.log('results', results)
+  // console.log('results', results)
 
   const tableRowsHtml = results.map((r, i) => `
     <tr class="${r.resultClass}" data-result="${i}">
       <th scope="row">${r.id}</th>
-      <td>${r.name}</td>
+      <td>${r.name}<br/>${r.theme}</td>
       <td><img class="img-fluid" src="https://cdn.rebrickable.com/media/sets/${r.id.toLowerCase()}.jpg" /></td>
       <td>${r.got}</td>
       <td>${r.notEnough}</td>
@@ -212,7 +219,7 @@ const disableCreateListButton = () => {
 }
 
 const removeSet = (id) => {
-  console.log('removeSet', id)
+  // console.log('removeSet', id)
   DATA.userSets = DATA.userSets.filter(s => s !== id)
   refreshUserSets()
   saveUserSets()
@@ -239,7 +246,7 @@ const refreshUserSets = () => {
   const itemsArea = document.querySelector('.user-inventory')
 
   const itemsHtml = DATA.userSets.map(i => createItemHtml(DATA.sets.find(s => s.id === i), 'Remove')).join('')
-  console.log('refreshUserSets', DATA.userSets)
+  // console.log('refreshUserSets', DATA.userSets)
 
   // Remove previously added click handlers
   document.querySelectorAll('.user-inventory .item').forEach((drop) => {
@@ -261,7 +268,7 @@ const refreshUserSets = () => {
   }
 }
 const addSet = (id) => {
-  console.log('addSet', id)
+  // console.log('addSet', id)
   if (!DATA.userSets.includes(id)) {
     DATA.userSets.push(id)
     refreshUserSets()
@@ -295,7 +302,7 @@ const bindAddSetOptions = async () => {
     const results = setSearch.search(searchTerm).slice(0, 18)
 
     const resultHtml = results.map(r => createItemHtml(r, 'Add')).join('')
-    console.log('results', searchTerm, results)
+    // console.log('results', searchTerm, results)
 
     // Remove previously added click handlers
     document.querySelectorAll('.user-inventory-select-results .item').forEach((drop) => {
@@ -310,7 +317,7 @@ const bindAddSetOptions = async () => {
   })
 }
 const init = async () => {
-  console.log('init')
+  // console.log('init')
   await fetchData()
   loadUserSets()
   await bindAddSetOptions()

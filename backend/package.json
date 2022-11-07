@@ -14,11 +14,13 @@
   },
   "nodemonConfig": {
     "ignore": [
+      "backend/raw-data",
       "raw-data",
       "data",
       "client-src",
       "_static",
-      "_docs"
+      "_docs",
+      "*.json"
     ]
   },
   "devDependencies": {

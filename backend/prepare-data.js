@@ -6,6 +6,22 @@ import zlib from 'zlib'
 const RAW_DATA_PATH = path.join('raw-data')
 const DATA_PATH = path.join('..', 'frontend', '_static', 'data')
 
+const CSVtoArray = (text) => {
+  const ret = ['']; let i = 0; let p = ''; let s = true
+  for (let l in text) {
+    l = text[l]
+    if (l === '"') {
+      s = !s
+      if (p === '"') {
+        ret[i] += '"'
+        l = '-'
+      } else if (p === '') { l = '-' }
+    } else if (s && l === ',') { l = ret[++i] = '' } else { ret[i] += l }
+    p = l
+  }
+  return ret
+}
+
 const downloadAndUnzip = async () => {
   const dataUrls = [
     'https://cdn.rebrickable.com/media/downloads/themes.csv.gz?1667635680.3222456',
@@ -29,7 +45,7 @@ const downloadAndUnzip = async () => {
     const filePath = path.join(RAW_DATA_PATH, fileName)
 
     if (fs.existsSync(filePath)) {
-      // console.log('Already exists:', filePath)
+      console.log('Already exists:', filePath)
       continue
     }
     console.log('Downloading:', filePath)
@@ -37,11 +53,21 @@ const downloadAndUnzip = async () => {
       responseType: 'buffer'
     })
     const f = zlib.gunzipSync(body).toString('utf-8').split('\n')
+
+    fs.writeFileSync(filePath.replace('.json', '.csv'), f.join('\n'))
+
     const headers = f.shift().split(',')
     const dataFile = []
     for (const d of f) {
       const tmp = {}
-      const row = d.split(',')
+      let row = d.split(',')
+      if (d.includes('"')) {
+        row = CSVtoArray(d)
+      }
+      if (!Array.isArray(row)) {
+        const d2 = d.replaceAll('""', '\'')
+        console.log('row', row, d, d2)
+      }
       if (row.length <= 1) {
         continue
       }
@@ -62,8 +88,8 @@ const process = async () => {
     fs.mkdirSync(DATA_PATH)
   }
   const processSetsPath = path.join(DATA_PATH, 'processed_sets.csv')
-  const processSetsGzPath = path.join(DATA_PATH, 'processed_sets.csv.gz')
-  if (fs.existsSync(processSetsPath) && fs.existsSync(processSetsGzPath)) {
+  // const processSetsGzPath = path.join(DATA_PATH, 'processed_sets.csv.gz')
+  if (fs.existsSync(processSetsPath)) {
     console.log('Already processed')
     return
   }
@@ -92,14 +118,26 @@ const process = async () => {
   let mainDataFile = ''
   for (let i = 0; i < DATA.sets.length; i++) {
     const set = DATA.sets[i]
-    if ((i + 1) % 100 === 0) {
-      console.log('set', (i + 1), 'of', DATA.sets.length)
+    // if ((i + 1) % 100 === 0) {
+    console.log('set', (i + 1), 'of', DATA.sets.length, set)
+    // }
+    let tmpThemeId = set.theme_id
+    set.theme = []
+    while (tmpThemeId !== null) {
+      const theme = DATA.themes.find(t => t.id === tmpThemeId)
+      set.theme.unshift(theme.name)
+      if (theme.parent_id === '') {
+        tmpThemeId = null
+        break
+      } else {
+        tmpThemeId = theme.parent_id
+      }
     }
-
+    set.theme = set.theme.join(' > ')
     set.inventory = DATA.inventories.find(i => i.set_num === set.set_num)
     set.parts = DATA.inventory_parts.filter(p => p.inventory_id === set.inventory.id)
     set.parts_total = set.parts.reduce((acc, p) => acc + parseInt(p.quantity), 0)
-    mainDataFile += `s,${set.set_num},${set.name},${set.num_parts},${set.parts_total}\n`
+    mainDataFile += `s,${set.set_num},${set.name},${set.num_parts},${set.parts_total},${set.theme}\n`
     for (const part of set.parts) {
       part.color = DATA.colors.find(c => c.id === part.color_id).name
       mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare},${part.img_url.replace('https://cdn.rebrickable.com/media/parts/', '')}\n`
@@ -107,7 +145,7 @@ const process = async () => {
   }
   mainDataFile = mainDataFile.slice(0, -1)
   fs.writeFileSync(processSetsPath, mainDataFile)
-  fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(mainDataFile, 'utf-8')))
+  // fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(mainDataFile, 'utf-8')))
   console.log('Done', mainDataFile.length)
 }
 const init = async () => {
