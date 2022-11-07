@@ -14,6 +14,7 @@
   },
   "nodemonConfig": {
     "ignore": [
+      "raw-data",
       "data",
       "client-src",
       "_static",

@@ -3,6 +3,7 @@ import path from 'path'
 import got from 'got'
 import zlib from 'zlib'
 
+const RAW_DATA_PATH = path.join('raw-data')
 const DATA_PATH = path.join('..', 'frontend', '_static', 'data')
 
 const downloadAndUnzip = async () => {
@@ -20,12 +21,12 @@ const downloadAndUnzip = async () => {
     'https://cdn.rebrickable.com/media/downloads/inventory_sets.csv.gz?1667635687.9662523',
     'https://cdn.rebrickable.com/media/downloads/inventory_minifigs.csv.gz?1667635688.2502525'
   ]
-  if (!fs.existsSync(DATA_PATH)) {
-    fs.mkdirSync(DATA_PATH)
+  if (!fs.existsSync(RAW_DATA_PATH)) {
+    fs.mkdirSync(RAW_DATA_PATH)
   }
   for (const dataUrl of dataUrls) {
     const fileName = `${dataUrl.split('downloads/')[1].split('.')[0]}.json`
-    const filePath = path.join(DATA_PATH, fileName)
+    const filePath = path.join(RAW_DATA_PATH, fileName)
 
     if (fs.existsSync(filePath)) {
       // console.log('Already exists:', filePath)
@@ -38,14 +39,17 @@ const downloadAndUnzip = async () => {
     const f = zlib.gunzipSync(body).toString('utf-8').split('\n')
     const headers = f.shift().split(',')
     const dataFile = []
-    f.forEach(function (d) {
+    for (const d of f) {
       const tmp = {}
       const row = d.split(',')
+      if (row.length <= 1) {
+        continue
+      }
       for (let i = 0; i < headers.length; i++) {
         tmp[headers[i]] = row[i]
       }
       dataFile.push(tmp)
-    })
+    }
 
     fs.writeFileSync(filePath, JSON.stringify(dataFile))
 
@@ -53,27 +57,62 @@ const downloadAndUnzip = async () => {
   }
 }
 
-const test = async () => {
-  const sets = JSON.parse(fs.readFileSync(path.join(DATA_PATH, 'sets.json'), 'utf-8'))
-  const inventorySets = JSON.parse(fs.readFileSync(path.join(DATA_PATH, 'inventory_sets.json'), 'utf-8'))
-  const inventories = JSON.parse(fs.readFileSync(path.join(DATA_PATH, 'inventories.json'), 'utf-8'))
-  const inventoryParts = JSON.parse(fs.readFileSync(path.join(DATA_PATH, 'inventory_parts.json'), 'utf-8'))
-  //   console.log('sets', sets, sets.length)
+const process = async () => {
+  if (!fs.existsSync(DATA_PATH)) {
+    fs.mkdirSync(DATA_PATH)
+  }
+  const processSetsPath = path.join(DATA_PATH, 'processed_sets.csv')
+  const processSetsGzPath = path.join(DATA_PATH, 'processed_sets.csv.gz')
+  if (fs.existsSync(processSetsPath) && fs.existsSync(processSetsGzPath)) {
+    console.log('Already processed')
+    return
+  }
+  const DATA = {}
+  const files = [
+    'themes',
+    'colors',
+    'part_categories',
+    'parts',
+    'part_relationships',
+    'elements',
+    'sets',
+    'minifigs',
+    'inventories',
+    'inventory_parts',
+    'inventory_sets',
+    'inventory_minifigs'
+  ]
 
-  const setNum = '8069-1'
+  console.log('files', files)
+  for (const file of files) {
+    DATA[file] = JSON.parse(fs.readFileSync(path.join(RAW_DATA_PATH, `${file}.json`), 'utf-8'))
+  }
+  DATA.sets = DATA.sets.filter(s => s.theme_id === '1')// .slice(0, 1)
+  // DATA.sets = DATA.sets.slice(19890)
+  let mainDataFile = ''
+  for (let i = 0; i < DATA.sets.length; i++) {
+    const set = DATA.sets[i]
+    if ((i + 1) % 100 === 0) {
+      console.log('set', (i + 1), 'of', DATA.sets.length)
+    }
 
-  const set = sets.find(s => s.set_num === setNum)
-  const inventorySet = inventorySets.filter(s => s.set_num === setNum)
-  const inventory = inventories.filter(s => s.set_num === setNum)
-  const inventoryPart = inventoryParts.filter(s => s.inventory_id === inventory[0].id)
-  console.log('set', set)
-  console.log('inventorySet', inventorySet, inventorySet.length)
-  console.log('inventory', inventory, inventory.length, inventory[0].id)
-  console.log('inventoryPart', inventoryPart, inventoryPart.length)
+    set.inventory = DATA.inventories.find(i => i.set_num === set.set_num)
+    set.parts = DATA.inventory_parts.filter(p => p.inventory_id === set.inventory.id)
+    set.parts_total = set.parts.reduce((acc, p) => acc + parseInt(p.quantity), 0)
+    mainDataFile += `s,${set.set_num},${set.name},${set.num_parts},${set.parts_total}\n`
+    for (const part of set.parts) {
+      part.color = DATA.colors.find(c => c.id === part.color_id).name
+      mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare}\n`
+    }
+  }
+  fs.writeFileSync(processSetsPath, mainDataFile)
+  fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(mainDataFile, 'utf-8')))
+  console.log('Done', mainDataFile.length)
 }
 const init = async () => {
   await downloadAndUnzip()
-  await test()
+  // await test()
+  await process()
 }
 
 init()
