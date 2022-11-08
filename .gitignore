@@ -2,3 +2,4 @@ node_modules
 # frontend/_static/data
 backend/raw-data
 .DS_Store
+processed_sets.csv

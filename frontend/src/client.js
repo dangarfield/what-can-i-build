@@ -1,5 +1,6 @@
 import Modal from 'bootstrap/js/dist/modal.js'
 import MiniSearch from 'minisearch'
+import { ungzip } from 'pako'
 
 const DATA = {
   userSets: [],
@@ -35,7 +36,11 @@ const fetchData = async () => {
   // setStatus('Processing data')
   // console.log('Data loaded', DATA)
 
-  DATA.sets = (await (await window.fetch('data/processed_sets.csv')).text()).substring(2).split('\ns,').map(s => {
+  // console.log('pako', pako)
+  // const data = await (await window.fetch('data/processed_sets.csv')).text()
+  const data = ungzip(await (await window.fetch('data/processed_sets.csv.gz')).arrayBuffer(), { to: 'string' })
+  // console.log('data', data)
+  DATA.sets = data.substring(2).split('\ns,').map(s => {
     const parts = s.split('\n')
     const setDetails = parts.shift().split(',')
     const partsObj = parts.map(p => {

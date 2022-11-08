@@ -13,6 +13,7 @@
   "dependencies": {
     "bootstrap": "^5.2.2",
     "minisearch": "^5.0.0",
+    "pako": "^2.1.0",
     "popper": "^1.0.1"
   },
   "devDependencies": {

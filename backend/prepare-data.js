@@ -88,65 +88,74 @@ const process = async () => {
     fs.mkdirSync(DATA_PATH)
   }
   const processSetsPath = path.join(DATA_PATH, 'processed_sets.csv')
-  // const processSetsGzPath = path.join(DATA_PATH, 'processed_sets.csv.gz')
-  if (fs.existsSync(processSetsPath)) {
-    console.log('Already processed')
-    return
-  }
-  const DATA = {}
-  const files = [
-    'themes',
-    'colors',
-    'part_categories',
-    'parts',
-    'part_relationships',
-    'elements',
-    'sets',
-    'minifigs',
-    'inventories',
-    'inventory_parts',
-    'inventory_sets',
-    'inventory_minifigs'
-  ]
+  if (!fs.existsSync(processSetsPath)) {
+    // console.log('Already processed')
+    const DATA = {}
+    const files = [
+      'themes',
+      'colors',
+      'part_categories',
+      'parts',
+      'part_relationships',
+      'elements',
+      'sets',
+      'minifigs',
+      'inventories',
+      'inventory_parts',
+      'inventory_sets',
+      'inventory_minifigs'
+    ]
 
-  console.log('files', files)
-  for (const file of files) {
-    DATA[file] = JSON.parse(fs.readFileSync(path.join(RAW_DATA_PATH, `${file}.json`), 'utf-8'))
-  }
-  // DATA.sets = DATA.sets.filter(s => s.theme_id === '1')// .slice(0, 1)
-  // DATA.sets = DATA.sets.slice(19890)
-  let mainDataFile = ''
-  for (let i = 0; i < DATA.sets.length; i++) {
-    const set = DATA.sets[i]
-    // if ((i + 1) % 100 === 0) {
-    console.log('set', (i + 1), 'of', DATA.sets.length, set)
-    // }
-    let tmpThemeId = set.theme_id
-    set.theme = []
-    while (tmpThemeId !== null) {
-      const theme = DATA.themes.find(t => t.id === tmpThemeId)
-      set.theme.unshift(theme.name)
-      if (theme.parent_id === '') {
-        tmpThemeId = null
-        break
-      } else {
-        tmpThemeId = theme.parent_id
+    console.log('files', files)
+    for (const file of files) {
+      DATA[file] = JSON.parse(fs.readFileSync(path.join(RAW_DATA_PATH, `${file}.json`), 'utf-8'))
+    }
+    // DATA.sets = DATA.sets.filter(s => s.theme_id === '1')// .slice(0, 1)
+    // DATA.sets = DATA.sets.slice(19890)
+    let mainDataFile = ''
+    for (let i = 0; i < DATA.sets.length; i++) {
+      const set = DATA.sets[i]
+      // if ((i + 1) % 100 === 0) {
+      console.log('set', (i + 1), 'of', DATA.sets.length, set)
+      // }
+      let tmpThemeId = set.theme_id
+      set.theme = []
+      while (tmpThemeId !== null) {
+        const theme = DATA.themes.find(t => t.id === tmpThemeId)
+        set.theme.unshift(theme.name)
+        if (theme.parent_id === '') {
+          tmpThemeId = null
+          break
+        } else {
+          tmpThemeId = theme.parent_id
+        }
+      }
+      set.theme = set.theme.join(' > ')
+      set.inventory = DATA.inventories.find(i => i.set_num === set.set_num)
+      set.parts = DATA.inventory_parts.filter(p => p.inventory_id === set.inventory.id)
+      set.parts_total = set.parts.reduce((acc, p) => acc + parseInt(p.quantity), 0)
+      mainDataFile += `s,${set.set_num},${set.name},${set.num_parts},${set.parts_total},${set.theme}\n`
+      for (const part of set.parts) {
+        part.color = DATA.colors.find(c => c.id === part.color_id).name
+        mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare},${part.img_url.replace('https://cdn.rebrickable.com/media/parts/', '')}\n`
       }
     }
-    set.theme = set.theme.join(' > ')
-    set.inventory = DATA.inventories.find(i => i.set_num === set.set_num)
-    set.parts = DATA.inventory_parts.filter(p => p.inventory_id === set.inventory.id)
-    set.parts_total = set.parts.reduce((acc, p) => acc + parseInt(p.quantity), 0)
-    mainDataFile += `s,${set.set_num},${set.name},${set.num_parts},${set.parts_total},${set.theme}\n`
-    for (const part of set.parts) {
-      part.color = DATA.colors.find(c => c.id === part.color_id).name
-      mainDataFile += `${part.part_num},${part.quantity},${part.color},${part.is_spare},${part.img_url.replace('https://cdn.rebrickable.com/media/parts/', '')}\n`
-    }
+    mainDataFile = mainDataFile.slice(0, -1)
+    fs.writeFileSync(processSetsPath, mainDataFile)
+    // fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(mainDataFile, 'utf-8')))
+    console.log('Written uncompressed', mainDataFile.length)
+  } else {
+    console.log('Already processed')
   }
-  mainDataFile = mainDataFile.slice(0, -1)
-  fs.writeFileSync(processSetsPath, mainDataFile)
-  // fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(mainDataFile, 'utf-8')))
-  console.log('Done', mainDataFile.length)
+
+  const processSetsGzPath = path.join(DATA_PATH, 'processed_sets.csv.gz')
+  if (!fs.existsSync(processSetsGzPath)) {
+    const data = fs.readFileSync(processSetsPath, 'utf-8')
+    // console.log('data', data)
+    fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(data, 'utf-8')))
+  } else {
+    console.log('Already compressed')
+  }
 }
 const init = async () => {
   await downloadAndUnzip()
