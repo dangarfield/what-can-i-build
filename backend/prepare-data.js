@@ -115,9 +115,9 @@ const process = async () => {
     let mainDataFile = ''
     for (let i = 0; i < DATA.sets.length; i++) {
       const set = DATA.sets[i]
-      // if ((i + 1) % 100 === 0) {
-      console.log('set', (i + 1), 'of', DATA.sets.length, set)
-      // }
+      if ((i + 1) % 100 === 0) {
+        console.log('set', (i + 1), 'of', DATA.sets.length, set)
+      }
       let tmpThemeId = set.theme_id
       set.theme = []
       while (tmpThemeId !== null) {

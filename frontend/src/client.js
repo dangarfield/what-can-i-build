@@ -156,8 +156,12 @@ const createList = () => {
 
     if (not <= 20 && set.partsUsed >= 30 && got > 50) {
       let resultClass = ''
-      if (notEnough === 0 && not === 0) {
+      if (DATA.userSets.includes(set.id)) {
+        resultClass = 'table-warning'
+      } else if (notEnough === 0 && not === 0) {
         resultClass = 'table-success'
+      } else if (notEnough <= 10 && not <= 10) {
+        resultClass = 'table-info'
       }
       results.push({
         id: set.id,
@@ -173,7 +177,7 @@ const createList = () => {
       })
     }
   }
-  results = results.sort((a, b) => a.not - b.not)
+  results = results.sort((a, b) => a.not - b.not || a.notEnough - b.notEnough || b.got - a.got)
   DATA.results = results
   // console.log('results', results)
 

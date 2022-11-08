@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "run-p dev:*",
     "dev:backend": "npm run dev -w backend",
-    "dev:frontend": "npm run dev -w frontend"
+    "dev:frontend": "npm run dev -w frontend",
+    "build:frontend": "npm run build -w frontend"
   },
   "author": "",
   "license": "ISC",
