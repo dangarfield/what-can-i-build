@@ -1,5 +1,8 @@
 node_modules
 # frontend/_static/data
 backend/raw-data
+backend/moc-data
+backend/screenshots
 .DS_Store
 processed_sets.csv
+processed_mocs.csv

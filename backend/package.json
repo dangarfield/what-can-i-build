@@ -10,7 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "got": "^12.5.2"
+    "bluebird": "^3.7.2",
+    "got": "^12.5.2",
+    "puppeteer": "^19.2.2"
   },
   "nodemonConfig": {
     "ignore": [

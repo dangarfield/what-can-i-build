@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import got from 'got'
 import zlib from 'zlib'
-
+import { getAllMOCs } from './get-mocs.js'
 const RAW_DATA_PATH = path.join('raw-data')
+const MOC_DATA_PATH = path.join('moc-data')
 const DATA_PATH = path.join('..', 'frontend', '_static', 'data')
 
 const CSVtoArray = (text) => {
@@ -22,7 +23,7 @@ const CSVtoArray = (text) => {
   return ret
 }
 
-const downloadAndUnzip = async () => {
+const downloadAndUnzipRawData = async () => {
   const dataUrls = [
     'https://cdn.rebrickable.com/media/downloads/themes.csv.gz?1667635680.3222456',
     'https://cdn.rebrickable.com/media/downloads/colors.csv.gz?1667635680.4582458',
@@ -83,7 +84,7 @@ const downloadAndUnzip = async () => {
   }
 }
 
-const process = async () => {
+const processSets = async () => {
   if (!fs.existsSync(DATA_PATH)) {
     fs.mkdirSync(DATA_PATH)
   }
@@ -147,20 +148,43 @@ const process = async () => {
   } else {
     console.log('Already processed')
   }
-
-  const processSetsGzPath = path.join(DATA_PATH, 'processed_sets.csv.gz')
-  if (!fs.existsSync(processSetsGzPath)) {
-    const data = fs.readFileSync(processSetsPath, 'utf-8')
-    // console.log('data', data)
-    fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(data, 'utf-8')))
-  } else {
-    console.log('Already compressed')
+}
+const downloadMOCs = async () => {
+  if (!fs.existsSync(MOC_DATA_PATH)) {
+    fs.mkdirSync(MOC_DATA_PATH)
   }
+  await getAllMOCs(MOC_DATA_PATH)
+}
+const processMOCs = async () => {
+  const processMocsPath = path.join(DATA_PATH, 'processed_mocs.csv')
+  let mainDataFile = ''
+  const mocFiles = fs.readdirSync(MOC_DATA_PATH)
+  for (const mocFile of mocFiles) {
+    const mocData = fs.readFileSync(path.join(MOC_DATA_PATH, mocFile), 'utf-8')
+    if (mocData.startsWith('m,')) {
+      mainDataFile += mocData
+    }
+  }
+  mainDataFile = mainDataFile.slice(0, -1)
+  fs.writeFileSync(processMocsPath, mainDataFile)
+}
+const createGzipFile = async () => {
+  const processSetsPath = path.join(DATA_PATH, 'processed_sets.csv')
+  const processMocsPath = path.join(DATA_PATH, 'processed_mocs.csv')
+  const processSetsGzPath = path.join(DATA_PATH, 'processed_data.csv.gz')
+  const setData = fs.readFileSync(processSetsPath, 'utf-8')
+  const mocData = fs.readFileSync(processMocsPath, 'utf-8')
+  const data = setData + '\n' + mocData
+  // console.log('data', data)
+  fs.writeFileSync(processSetsGzPath, zlib.gzipSync(Buffer.from(data, 'utf-8')))
 }
 const init = async () => {
-  await downloadAndUnzip()
+  await downloadAndUnzipRawData()
+  // await downloadMOCs()
   // await test()
-  await process()
+  await processSets()
+  await processMOCs()
+  await createGzipFile()
 }
 
 init()

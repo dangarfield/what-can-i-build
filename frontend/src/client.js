@@ -14,33 +14,11 @@ const setStatus = (status) => {
 }
 const fetchData = async () => {
   setStatus('Loading data..')
-  // const files = [
-  //   'themes',
-  //   'colors',
-  //   'part_categories',
-  //   'parts',
-  //   'part_relationships',
-  //   'elements',
-  //   'sets',
-  //   'minifigs',
-  //   'inventories',
-  //   'inventory_parts',
-  //   'inventory_sets',
-  //   'inventory_minifigs'
-  // ]
-  // console.log('files', files)
-  // for (const file of files) {
-  //   const req = await window.fetch(`data/${file}.json`)
-  //   DATA[file] = await req.json()
-  // }
-  // setStatus('Processing data')
-  // console.log('Data loaded', DATA)
 
-  // console.log('pako', pako)
-  // const data = await (await window.fetch('data/processed_sets.csv')).text()
-  const data = ungzip(await (await window.fetch('data/processed_sets.csv.gz')).arrayBuffer(), { to: 'string' })
+  const data = ungzip(await (await window.fetch('data/processed_data.csv.gz')).arrayBuffer(), { to: 'string' })
   // console.log('data', data)
-  DATA.sets = data.substring(2).split('\ns,').map(s => {
+  // DATA.sets = data.substring(2).split(/[\ns,]+/).map(s => {
+  DATA.sets = data.substring(2).split(/(?:\ns,|\nm,)+/).map(s => {
     const parts = s.split('\n')
     const setDetails = parts.shift().split(',')
     const partsObj = parts.map(p => {
@@ -48,6 +26,8 @@ const fetchData = async () => {
       return { partId: partDetails[0], quantity: parseInt(partDetails[1]), color: partDetails[2], isSpare: partDetails[3] === 't', imgUrl: partDetails[4] }
     })
     const partsMap = new Map(partsObj.filter(p => !p.isSpare).map(p => [p.partId, p.quantity]))
+    let type = 'set'
+    if (setDetails[0].startsWith('MOC')) type = 'moc'
 
     return {
       id: setDetails[0],
@@ -56,7 +36,8 @@ const fetchData = async () => {
       partsTotal: parseInt(setDetails[3]),
       parts: partsObj,
       partsMap,
-      theme: setDetails[4]
+      theme: setDetails[4],
+      type
     }
   })
   // console.log('rawSetData', DATA.sets)
@@ -71,6 +52,7 @@ const setUserParts = () => {
   })
   // console.log('userSets', userSets)
 
+  // TODO - Synonym parts, eg parts that can be swapped
   DATA.userParts = new Map()
   for (const set of userSets) {
     for (const part of set.parts) {
@@ -102,8 +84,15 @@ const listResultClickHandler = (e) => {
   const modalEle = document.querySelector('.modal')
   modalEle.querySelector('.modal-title').innerHTML = `${r.name} (${r.id})`
 
+  let img = `https://cdn.rebrickable.com/media/sets/${r.id.toLowerCase()}.jpg`
+  if (r.type === 'moc') img = `https://cdn.rebrickable.com/media/thumbs/mocs/${r.id.toLowerCase()}.jpg/1000x800.jpg`
+
   const modalBodyHtml = `
+  <img class="img-fluid" src="${img}" />
   <h4>Got ${r.got} parts</h4>
+  <div class="row">
+    ${r.gotParts.map(p => createPartHtml(p)).join('')}
+  </div>
   <h4>Not got ${r.not} parts</h4>
   <div class="row">
     ${r.notParts.map(p => createPartHtml(p)).join('')}
@@ -135,6 +124,7 @@ const createList = () => {
     }
 
     let got = 0
+    const gotParts = []
     let notEnough = 0
     const notEnoughParts = []
     let not = 0
@@ -150,11 +140,12 @@ const createList = () => {
         notEnoughParts.push({ partId, quantity, have: userPart, imgUrl: set.parts.find(p => p.partId === partId).imgUrl })
       } else {
         got += quantity
+        gotParts.push({ partId, quantity, imgUrl: set.parts.find(p => p.partId === partId).imgUrl })
       }
     }
-    // console.log('createList', i + 1, 'of', DATA.sets.length, 'got:', got, 'notEnough:', notEnough, 'not:', not, set)
+    console.log('createList', i + 1, 'of', DATA.sets.length, 'got:', got, gotParts, 'notEnough:', notEnough, notEnoughParts, 'not:', not, notParts, set)
 
-    if (not <= 20 && set.partsUsed >= 30 && got > 50) {
+    if (set.type === 'moc' || (not <= 20 && set.partsUsed >= 30 && got > 50)) {
       let resultClass = ''
       if (DATA.userSets.includes(set.id)) {
         resultClass = 'table-warning'
@@ -168,7 +159,9 @@ const createList = () => {
         name: set.name,
         theme: set.theme,
         partsUsed: set.partsUsed,
+        type: set.type,
         got,
+        gotParts,
         notEnough,
         notEnoughParts,
         not,
@@ -181,16 +174,20 @@ const createList = () => {
   DATA.results = results
   // console.log('results', results)
 
-  const tableRowsHtml = results.map((r, i) => `
+  const tableRowsHtml = results.map((r, i) => {
+    let img = `https://cdn.rebrickable.com/media/sets/${r.id.toLowerCase()}.jpg`
+    if (r.type === 'moc') img = `https://cdn.rebrickable.com/media/thumbs/mocs/${r.id.toLowerCase()}.jpg/1000x800.jpg`
+    return `
     <tr class="${r.resultClass}" data-result="${i}">
       <th scope="row">${r.id}</th>
       <td>${r.name}<br/>${r.theme}</td>
-      <td><img class="img-fluid" src="https://cdn.rebrickable.com/media/sets/${r.id.toLowerCase()}.jpg" /></td>
+      <td><img class="img-fluid" src="${img}" /></td>
       <td>${r.got}</td>
       <td>${r.notEnough}</td>
       <td>${r.not}</td>
     </tr>
-  `).join('')
+  `
+  }).join('')
   const tableHtml = `<table class="table table-striped table-hover">
   <thead>
     <tr>
@@ -303,7 +300,7 @@ const createItemHtml = (r, cta) => {
 }
 const bindAddSetOptions = async () => {
   setStatus('Adding set select options')
-  setSearch.addAll(DATA.sets)
+  setSearch.addAll(DATA.sets.filter(s => s.type === 'set'))
   // console.log('results', setSearch.search('tractor'), setSearch.search('2621-2'))
   const resultArea = document.querySelector('.user-inventory-select-results')
   document.querySelector('.user-inventory-select').addEventListener('keyup', function (e) {
