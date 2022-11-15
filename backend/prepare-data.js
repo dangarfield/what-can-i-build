@@ -180,7 +180,7 @@ const createGzipFile = async () => {
 }
 const init = async () => {
   await downloadAndUnzipRawData()
-  await downloadMOCs()
+  // await downloadMOCs()
   await processSets()
   await processMOCs()
   await createGzipFile()
