@@ -196,11 +196,12 @@ const createList = () => {
         notEnoughParts,
         not,
         notParts,
-        resultClass
+        resultClass,
+        sortVal: not + notEnough
       })
     }
   }
-  results = results.sort((a, b) => a.not - b.not || a.notEnough - b.notEnough || b.got - a.got)
+  results = results.sort((a, b) => a.sortVal - b.sortVal || a.not - b.not || a.notEnough - b.notEnough || b.got - a.got)
   DATA.results = results
   // console.log('results', results)
 
