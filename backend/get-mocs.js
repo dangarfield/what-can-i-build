@@ -36,18 +36,19 @@ export const getAllMOCs = async (MOC_DATA_PATH) => {
   //   const results = []
   const results = await withBrowser(async (browser) => {
     return bluebird.map(mocNos, async (mocNo, i, length) => {
-      return withPage(browser)(async (page) => {
-        const mocPath = path.join(MOC_DATA_PATH, `${mocNo}.csv`)
-        if (fs.existsSync(mocPath)) {
-          const data = fs.readFileSync(mocPath, 'utf-8')
-          if (data.startsWith('invalidMOCNo')) {
-            // console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'Invalid MOC No')
-            return
-          } else if (data.startsWith('m,')) {
-            // console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'Already Complete')
-            return
-          }
+      const mocPath = path.join(MOC_DATA_PATH, `${mocNo}.csv`)
+      // console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'INIT')
+      if (fs.existsSync(mocPath)) {
+        const data = fs.readFileSync(mocPath, 'utf-8')
+        if (data.startsWith('invalidMOCNo')) {
+          // console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'Invalid MOC No')
+          return
+        } else if (data.startsWith('m,')) {
+          // console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'Already Complete')
+          return
         }
+      }
+      return withPage(browser)(async (page) => {
         console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'START')
         const dataFile = await getOneMOC(page, mocNo)
         console.log('getOneMOC', i + 1, 'of', length, '->', mocNo, 'END')
