@@ -49,10 +49,14 @@ export const getAllMOCs = async (MOC_DATA_PATH) => {
         }
       }
       return withPage(browser)(async (page) => {
-        console.log('getOneMOC', i, 'of', length - 1, '->', mocNo, 'START')
-        const dataFile = await getOneMOC(page, mocNo)
-        console.log('getOneMOC', i, 'of', length - 1, '->', mocNo, 'END')
-        fs.writeFileSync(mocPath, dataFile)
+        try {
+          console.log('getOneMOC', i, 'of', length - 1, '->', mocNo, 'START')
+          const dataFile = await getOneMOC(page, mocNo)
+          console.log('getOneMOC', i, 'of', length - 1, '->', mocNo, 'END')
+          fs.writeFileSync(mocPath, dataFile)
+        } catch (error) {
+          console.log('getOneMOC', i, 'of', length - 1, '->', mocNo, 'error', error)
+        }
       })
     }, { concurrency: 1 })
   })
