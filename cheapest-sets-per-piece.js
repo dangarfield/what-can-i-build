@@ -1,6 +1,7 @@
 //  https://www.pricerunner.com/cl/72/Toys?attr_57121593=57121615&attr_57121617=60430082&sort=price_asc
 
 const d = [...document.querySelectorAll('.k6oEmfY83J')].map(p => p.textContent).filter(t => t.includes('Pieces')).map(e => { return { e, no: parseInt(e.split('Pieces')[0].split(' ').filter(t => t !== '').reverse()[0]), p: parseFloat(parseFloat(e.split('£')[1]).toFixed(2)) } }).map(a => { return { t: a.e.split('Lego Technic')[1].trim(), no: a.no, p: a.p, e: a.p / a.no } }).sort((a, b) => a.e - b.e).map(e => JSON.stringify(e))
+
 const f1 = [
   {
     t: 'McLaren Senna GTR 42123',
