@@ -1,0 +1,134 @@
+</option>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>What Can I Build?</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"
+        integrity="sha512-5PV92qsds/16vyYIJo3T/As4m2d8b6oWYfoqV+vtizRB6KhF1F9kYzWzQmsO6T3z3QG2Xdhrx7FQ+5R1LiQdUA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <style>
+        .user-inventory .item:hover,
+        .user-inventory-select-results .item:hover {
+            cursor: pointer;
+        }
+
+        .user-inventory .item,
+        .user-inventory-select-results .item {
+            position: relative;
+        }
+
+        .user-inventory .item .item-add,
+        .user-inventory-select-results .item .item-add {
+            opacity: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .user-inventory .item:hover img,
+        .user-inventory .item:hover p,
+        .user-inventory-select-results .item:hover img,
+        .user-inventory-select-results .item:hover p {
+            opacity: 0.3;
+        }
+
+        .user-inventory .item:hover .item-add,
+        .user-inventory-select-results .item:hover .item-add {
+            opacity: 1;
+        }
+
+        .results-list img {
+            max-width: 100px;
+        }
+
+        .results-list tr {
+            cursor: pointer;
+        }
+
+        .modal.show .modal-dialog.modal-fullscreen {
+            padding: 10px;
+        }
+
+        .card {
+            min-height: 125px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container ">
+        <div class="row">
+            <div class="col text-center">
+                <h1>What Can I Build?</h1>
+                <div class="alert alert-primary" role="alert">
+                    Status: <span class="status"></span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <label for="user-inventory-select" class="form-label h4">Add your sets<span
+                                class="counts"></span></label>
+                        <input class="form-control user-inventory-select mb-3" id="user-inventory-select"
+                            placeholder="Add your sets">
+
+                        <div class="row user-inventory-select-results"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="mb-2 mb-lg-5">Your sets</h4>
+                        <div class="row user-inventory"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col">
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-primary create-list disabled" type="button">What can I build with my <span
+                            class="user-inventory-count"></span>
+                        sets?</button>
+                </div>
+                <div class="results-list table-responsive"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Modal body text goes here.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script src="client.min.js"></script>
+</body>
+
+</html>
