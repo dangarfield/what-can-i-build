@@ -2,7 +2,7 @@
 
 const d = [...document.querySelectorAll('.k6oEmfY83J')].map(p => p.textContent).filter(t => t.includes('Pieces')).map(e => { return { e, no: parseInt(e.split('Pieces')[0].split(' ').filter(t => t !== '').reverse()[0]), p: parseFloat(parseFloat(e.split('£')[1]).toFixed(2)) } }).map(a => { return { t: a.e.split('Lego Technic')[1].trim(), no: a.no, p: a.p, e: a.p / a.no } }).sort((a, b) => a.e - b.e).map(e => JSON.stringify(e))
 
-const jan_09 = [[
+const jan09 = [[
   '{"t":"McLaren Senna GTR 42123","no":830,"p":34.99,"e":0.0421566265060241}',
   '{"t":"Catamaran 42105","no":404,"p":18,"e":0.04455445544554455}',
   '{"t":"Land Rover Defender 42110","no":2573,"p":120,"e":0.046638165565487756}',
@@ -115,7 +115,7 @@ const jan_09 = [[
   '{"t":"Powered Up Large Motor 88013","no":1,"p":29.99,"e":29.99}'
 ]]
 
-const jan_22 = [
+const jan22 = [
   '{"t":"Monster Jam Grave Digger 42118","no":212,"p":9,"e":0.04245283018867924}',
   '{"t":"McLaren Senna GTR 42123","no":830,"p":35.99,"e":0.04336144578313253}',
   '{"t":"Catamaran 42105","no":404,"p":18,"e":0.04455445544554455}',
